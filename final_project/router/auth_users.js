@@ -47,7 +47,7 @@ regd_users.post("/login", (req, res) => {
 });
 
 // Add a book review
-regd_users.post("/review/:isbn", (req, res) => {
+regd_users.put("/review/:isbn", (req, res) => {
     const username = req.session.authorization?.username;
 
     if (!isValid(username)) {
@@ -66,21 +66,8 @@ regd_users.post("/review/:isbn", (req, res) => {
 
         // get current reviews
         const currentReviews = book.reviews;
-
-        // if empty, add
-        if (Object.keys(currentReviews).length === 0) {
-            const nextKey = Object.keys(currentReviews).length + 1;
-            currentReviews[nextKey] = { username: username, review: review }
-        }
-
-        // check if user already reviewed
-        // const alreadyReviewed = Object.keys(currentReviews).forEach(k => currentReviews[k].username === username)
-
-        // update review
-        if (alreadyReviewed.length > 0) {
-            // alreadyReviewed = { username: username, review: review }
-        }
-
+        currentReviews[username] = review;
+      
         book.reviews = currentReviews;
         return res.status(200).json({ message: `Review added to "${book.title}" book by "${username}".` });
     }
@@ -89,8 +76,8 @@ regd_users.post("/review/:isbn", (req, res) => {
     }
 });
 
-// Update a book review
-regd_users.put("/review/:isbn", (req, res) => {
+// Delete a book review
+regd_users.delete("/review/:isbn", (req, res) => {
     const username = req.session.authorization?.username;
 
     if (!isValid(username)) {
@@ -101,17 +88,15 @@ regd_users.put("/review/:isbn", (req, res) => {
     let book = {};
     Object.keys(books).forEach(k => k === isbn ? book = books[k] : [])
     if (book) {
-        let review = req.body.review;
-
-        if (!review) {
-            return res.send("Review must not be empty.");
-        }
-
-        book["reviews"].push({ username: username, review: review })
-        res.send(`Review added to "${book.title}" book by "${username}".`);
+        // get current reviews
+        const currentReviews = book.reviews;
+        delete currentReviews[username]
+      
+        book.reviews = currentReviews;
+        return res.status(200).json({ message: `Review deleted.` });
     }
     else {
-        res.send("Unable to find book!");
+        return res.status(404).json({ message: "Book not found." });
     }
 });
 
